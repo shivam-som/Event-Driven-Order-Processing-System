@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Event-Driven Order Processing System (SNS -> SQS -> Lambda -> DynamoDB)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: OrdersTable
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  OrderEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: order-events-topic
+
+  OrdersQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: order-events-queue
+      VisibilityTimeout: 60
+
+  QueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt OrdersQueue.Arn
+      TopicArn: !Ref OrderEventsTopic
+
+  ProducerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: order-producer
+      Handler: producer.handler.lambda_handler
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref OrderEventsTopic
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref OrderEventsTopic
+
+  ConsumerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: order-consumer
+      Handler: consumer.handler.lambda_handler
+      Events:
+        OrderQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OrdersQueue.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+        - SQSPollerPolicy: {}
+      Environment:
+        Variables:
+          ORDERS_TABLE: !Ref OrdersTable
+
+Outputs:
+  TopicArn:
+    Description: SNS Topic ARN
+    Value: !Ref OrderEventsTopic
+  QueueUrl:
+    Description: SQS Queue URL
+    Value: !Ref OrdersQueue
