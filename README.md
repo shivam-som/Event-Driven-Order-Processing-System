@@ -2,6 +2,8 @@
 
 **Description**: Designed and implemented a scalable event-driven order workflow using AWS SNS, SQS, Lambda, and DynamoDB. This project demonstrates decoupled microservices communication, improved fault tolerance, and consistent processing under high load.
 
+<img width="1306" height="465" alt="image" src="https://github.com/user-attachments/assets/f0251a9f-f10e-4fb8-b5ba-d22d25411c89" />
+
 ## Project Structure
 - `producer/` - Lambda (or local script) that publishes order events to an SNS topic.
   - `producer/handler.py` - example producer handler / script using boto3.
