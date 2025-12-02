@@ -1,4 +1,4 @@
-# Event-Driven Order Processing System     
+# Event-Driven Order Processing System      
 
 **Description**: Designed and implemented a scalable event-driven order workflow using AWS SNS, SQS, Lambda, and DynamoDB. This project demonstrates decoupled microservices communication, improved fault tolerance, and consistent processing under high load.
 
